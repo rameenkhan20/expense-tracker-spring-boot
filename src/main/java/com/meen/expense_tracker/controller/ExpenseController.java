@@ -11,8 +11,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.meen.expense_tracker.exception.ExpenseNotFoundException;
 import com.meen.expense_tracker.model.Expense;
 import com.meen.expense_tracker.repository.ExpenseRepository;
+
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PutMapping;
 
 
@@ -27,7 +32,7 @@ public class ExpenseController {
     }
 
     @PostMapping
-    public Expense addExpense(@RequestBody Expense expense){
+    public Expense addExpense(@Valid @RequestBody Expense expense){
         return expenseRepository.save(expense);
     }
 
@@ -49,7 +54,8 @@ public class ExpenseController {
 
     @GetMapping("/{id}")
     public Expense getExpenseById(@PathVariable Long id){
-        return expenseRepository.findById(id).orElse(null);
+        return expenseRepository.findById(id)
+        .orElseThrow(() -> new ExpenseNotFoundException("Expense with " + id +" id Not Found!"));
     }
 
     // @GetMapping("category")
@@ -58,8 +64,9 @@ public class ExpenseController {
     // }
 
     @PutMapping("/{id}")
-    public Expense UpdateExpense(@PathVariable Long id, @RequestBody Expense entity) {
-        var expenseToBeUpdate = expenseRepository.findById(id).orElse(null);
+    public Expense UpdateExpense(@PathVariable Long id,@Valid @RequestBody Expense entity) {
+        var expenseToBeUpdate = expenseRepository.findById(id)
+        .orElseThrow(() -> new ExpenseNotFoundException("Expense with " + id +" id Not Found!"));
 
         expenseToBeUpdate.setAmount(entity.getAmount());
         expenseToBeUpdate.setCategory(entity.getCategory());
@@ -72,6 +79,8 @@ public class ExpenseController {
 
     @DeleteMapping("/{id}")
     public void removExpense(@PathVariable Long id){
+        if(!expenseRepository.existsById(id))
+            throw new ExpenseNotFoundException("Expense with " + id +" id Not Found!");
         expenseRepository.deleteById(id);
     }
 }
